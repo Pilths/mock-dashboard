@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fibre map: MapLibre + OpenFreeMap</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  html, body, #map { height: 100%; margin: 0; }
+  .panel { position: absolute; top: 10px; left: 10px; z-index: 1; background: #fff; padding: 6px 10px; font: 13px sans-serif; border-radius: 4px; box-shadow: 0 1px 4px #0004; }
+  .panel i { display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 4px solid; }
+  .panel button { margin-bottom: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <button id="toggle">Switch to OSM raster</button><br>
+  <i style="border-color:#8B4513"></i>Underground<br>
+  <i style="border-color:#1E88E5;border-top-style:dashed"></i>Aerial
+</div>
+<script>
+const VECTOR = 'https://tiles.openfreemap.org/styles/liberty';
+const RASTER = {
+  version: 8,
+  glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+  sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19,
+    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
+  layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const UNDERGROUND = ['in', 'underground', ['downcase', ['coalesce', ['get', 'description'], '']]];
+
+const map = new maplibregl.Map({ container: 'map', style: VECTOR });
+map.addControl(new maplibregl.NavigationControl());
+let vector = true, data;
+
+const dataReady = Promise.all(['routes.geojson', 'sites.geojson'].map(f => fetch(f).then(r => r.json())))
+  .then(([routes, sites]) => (data = { routes, sites }));
+
+// Basemap switch wipes custom layers, so re-add them every time a style loads.
+map.on('style.load', () => dataReady.then(addData));
+
+function addData() {
+  if (map.getSource('routes')) return;
+  map.addSource('routes', { type: 'geojson', data: data.routes });
+  map.addSource('sites', { type: 'geojson', data: data.sites });
+  map.addLayer({ id: 'routes-underground', type: 'line', source: 'routes', filter: UNDERGROUND,
+    layout: { 'line-cap': 'round' }, paint: { 'line-color': '#8B4513', 'line-width': 4 } });
+  map.addLayer({ id: 'routes-aerial', type: 'line', source: 'routes', filter: ['!', UNDERGROUND],
+    paint: { 'line-color': '#1E88E5', 'line-width': 4, 'line-dasharray': [2, 1.5] } });
+  map.addLayer({ id: 'sites', type: 'circle', source: 'sites',
+    paint: { 'circle-radius': 7, 'circle-color': '#D32F2F', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+  map.addLayer({ id: 'site-labels', type: 'symbol', source: 'sites',
+    layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 13,
+      'text-anchor': 'left', 'text-offset': [0.9, 0], 'text-allow-overlap': true },
+    paint: { 'text-color': '#222', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } });
+}
+
+dataReady.then(({ routes, sites }) => {
+  const b = new maplibregl.LngLatBounds();
+  const walk = c => typeof c[0] === 'number' ? b.extend(c) : c.forEach(walk);
+  [...routes.features, ...sites.features].forEach(f => walk(f.geometry.coordinates));
+  map.fitBounds(b, { padding: 40, duration: 0 });
+});
+
+for (const id of ['routes-underground', 'routes-aerial', 'sites']) {
+  map.on('click', id, e => {
+    const p = e.features[0].properties;
+    new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<b>${esc(p.name)}</b><br>${esc(p.description)}`).addTo(map);
+  });
+  map.on('mouseenter', id, () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', id, () => map.getCanvas().style.cursor = '');
+}
+
+document.getElementById('toggle').onclick = e => {
+  vector = !vector;
+  // diff: false forces a full reload so 'style.load' fires and addData re-adds our layers.
+  map.setStyle(vector ? VECTOR : RASTER, { diff: false });
+  e.target.textContent = vector ? 'Switch to OSM raster' : 'Switch to OpenFreeMap vector';
+};
+</script>
+</body>
+</html>

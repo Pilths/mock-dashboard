@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Map Comparison</title>
+<style>
+  :root {
+    --ink: #1d2433; --muted: #5b6475; --line: #d9dde5; --panel: #f5f7fa;
+    --bar: #243042; --bar-ink: #fff; --accent: #1E88E5; --under: #8B4513;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  h2 { font-size: 20px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--line); }
+  h3 { font-size: 16px; margin: 20px 0 6px; }
+  p { margin: 0 0 12px; max-width: 75ch; }
+  .muted { color: var(--muted); }
+  .key { display: inline-block; width: 22px; vertical-align: middle; border-top: 4px solid; margin: 0 4px 0 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .grid.stack { grid-template-columns: 1fr; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #fff; break-inside: avoid; }
+  .bar { background: var(--bar); color: var(--bar-ink); padding: 8px 12px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+  .bar a { color: #cfe3ff; font-weight: 400; }
+  .card iframe { display: block; width: 100%; height: 440px; border: 0; }
+  .card img { display: block; width: 100%; height: auto; }
+  .placeholder { height: 440px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    padding: 24px; background: repeating-linear-gradient(45deg, var(--panel), var(--panel) 12px, #eceff4 12px, #eceff4 24px); color: var(--muted); }
+  .placeholder strong { color: var(--ink); font-size: 16px; display: block; margin-bottom: 6px; }
+  .shots .placeholder { height: auto; aspect-ratio: 1400 / 800; }
+  .caption { padding: 6px 12px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  thead th { background: var(--bar); color: var(--bar-ink); }
+  tbody th { background: var(--panel); width: 16%; }
+  tr { break-inside: avoid; }
+  .table-wrap { overflow-x: auto; }
+
+  pre { margin: 0; padding: 12px; background: #1f2430; color: #e6e9ef; font: 12.5px/1.5 ui-monospace, Consolas, monospace; overflow-x: auto; white-space: pre; }
+  .src { font-size: 12px; color: var(--muted); padding: 6px 12px; border-top: 1px solid var(--line); }
+
+  .reco { border-left: 4px solid var(--accent); background: var(--panel); padding: 14px 18px; border-radius: 0 6px 6px 0; }
+  .reco p { margin: 0; }
+
+  .print-only { display: none; }
+  @media print {
+    @page { size: A4 landscape; margin: 12mm; }
+    body { font-size: 11pt; }
+    main { max-width: none; padding: 0; }
+    .live { display: none; }
+    .print-only { display: block; }
+    h2 { break-after: avoid; }
+    pre { white-space: pre-wrap; font-size: 9pt; }
+    .grid:not(.stack) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .bar a { display: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Showing our fibre network on a web map: 3 options compared</h1>
+  <p>We need a web map that shows our fibre sites and the cable routes between them. This page compares three ways to build it, using the same mock data (5 sites and 4 routes around Kajang, Cheras, KL, Bangi and Putrajaya).</p>
+  <p>On every map, routes are coloured by type: <span class="key" style="border-color:var(--under)"></span>Underground (brown, solid) and <span class="key" style="border-color:var(--accent);border-top-style:dashed"></span>Aerial (blue, dashed). Click any site or route to see its name and details.</p>
+  <p class="print-only muted">Printed copy: the live maps are left out. See the Screenshots section.</p>
+
+  <section class="live">
+    <h2>Live maps</h2>
+    <p class="muted">These are live and interactive: drag, zoom and click. They need the local server (http://localhost:8000) and an internet connection for the background map.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="bar"><span>Google Maps</span><a href="google.html" target="_blank">Open</a></div>
+        <div id="google-live" class="placeholder">
+          <strong>Not tested</strong>
+          Needs a Google API key and a billing account with a card.
+        </div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>Leaflet + OpenStreetMap</span><a href="osm.html" target="_blank">Open</a></div>
+        <iframe src="osm.html" title="Leaflet with OpenStreetMap tiles" loading="lazy"></iframe>
+      </div>
+      <div class="card">
+        <div class="bar"><span>MapLibre + OpenFreeMap</span><a href="maplibre.html" target="_blank">Open</a></div>
+        <iframe src="maplibre.html" title="MapLibre with OpenFreeMap vector tiles" loading="lazy"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <section class="shots">
+    <h2>Screenshots</h2>
+    <p class="muted">Captured with Playwright (headless Chromium) at 1400 &times; 800 on 15 Oct 2026, so this record still works when the servers are off. Click an image for full size.</p>
+    <h3>Whole network</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="bar"><span>Google Maps</span></div>
+        <div class="placeholder"><strong>Not tested</strong>Needs a Google API key and a billing account with a card.</div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>Leaflet + OpenStreetMap</span></div>
+        <a href="screenshots/osm.png"><img src="screenshots/osm.png" alt="Leaflet map with OpenStreetMap tiles showing all 5 sites and 4 routes"></a>
+      </div>
+      <div class="card">
+        <div class="bar"><span>MapLibre + OpenFreeMap</span></div>
+        <a href="screenshots/maplibre.png"><img src="screenshots/maplibre.png" alt="MapLibre map with OpenFreeMap vector basemap showing all 5 sites and 4 routes"></a>
+      </div>
+    </div>
+    <h3>Close-up on one route (Cheras to KL Central, same scale)</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="bar"><span>Google Maps</span></div>
+        <div class="placeholder"><strong>Not tested</strong>Needs a Google API key and a billing account with a card.</div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>Leaflet + OpenStreetMap</span></div>
+        <a href="screenshots/osm-zoom.png"><img src="screenshots/osm-zoom.png" alt="Close-up of the Cheras to KL Central route on OpenStreetMap raster tiles"></a>
+        <div class="caption">Raster images: text and lines are fixed pixels and blur when scaled between zoom levels.</div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>MapLibre + OpenFreeMap</span></div>
+        <a href="screenshots/maplibre-zoom.png"><img src="screenshots/maplibre-zoom.png" alt="Close-up of the Cheras to KL Central route on the OpenFreeMap vector basemap"></a>
+        <div class="caption">Vector data drawn by the browser: text and lines stay sharp at any zoom.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Comparison</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Google Maps</th><th>Leaflet + OSM tiles</th><th>MapLibre + OpenFreeMap</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Look</th><td>Most polished and familiar basemap</td><td>Flat raster tiles, looks dated, blurs between zoom levels</td><td>Smooth vector rendering, crisp at any zoom, rotation and tilt</td></tr>
+          <tr><th>Route styling</th><td>Data layer only: colour and width, no dashes</td><td>Full control, dashes included</td><td>Full control, data-driven styling, dashes via separate layers</td></tr>
+          <tr><th>Cost</th><td>Free monthly allowance, then pay per use</td><td>Free</td><td>Free</td></tr>
+          <tr><th>Key or account needed</th><td>API key plus billing account with a card</td><td>None</td><td>None</td></tr>
+          <tr><th>Integration effort</th><td>Script tag plus key, loadGeoJson</td><td>Easiest, about 20 lines</td><td>Slightly more: style, sources and layers</td></tr>
+          <tr><th>Scales to many routes</th><td>Fine for hundreds</td><td>Fine for hundreds to low thousands, slows after that</td><td>Best: WebGL handles tens of thousands</td></tr>
+          <tr><th>Risks</th><td>Vendor lock-in, key management, terms of use</td><td>OSM's public tile server forbids heavy use</td><td>OpenFreeMap has no SLA unless you self-host</td></tr>
+          <tr><th>Self-hosting/offline</th><td>No</td><td>Yes, with your own tiles</td><td>Yes, with your own tiles and style</td></tr>
+          <tr><th>PostGIS path</th><td>GeoJSON</td><td>GeoJSON</td><td>GeoJSON now, vector tiles later (Martin or pg_tileserv)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Integration</h2>
+    <p>The code that loads the route data and draws the routes, copied from each page. All three read the same <code>routes.geojson</code> file exported from our PostGIS database.</p>
+    <div class="grid stack">
+      <div class="card">
+        <div class="bar"><span>Google Maps</span><span style="font-weight:400">not tested</span></div>
+<pre>map.data.setStyle(f =&gt; {
+  // ... site marker style skipped ...
+  return { strokeColor: isUnderground(desc) ? '#8B4513' : '#1E88E5', strokeWeight: 4 };
+});
+map.data.loadGeoJson('routes.geojson', null, done);</pre>
+        <div class="src">google.html, lines 29, 37, 38 and 48</div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>Leaflet + OpenStreetMap</span></div>
+<pre>Promise.all(['routes.geojson', 'sites.geojson'].map(f =&gt; fetch(f).then(r =&gt; r.json()))).then(([routes, sites]) =&gt; {
+  const r = L.geoJSON(routes, {
+    style: f =&gt; isUnderground(f.properties.description)
+      ? { color: '#8B4513', weight: 4 }
+      : { color: '#1E88E5', weight: 4, dashArray: '8 6' },</pre>
+        <div class="src">osm.html, lines 34&ndash;38</div>
+      </div>
+      <div class="card">
+        <div class="bar"><span>MapLibre + OpenFreeMap</span></div>
+<pre>map.addSource('routes', { type: 'geojson', data: data.routes });
+map.addLayer({ id: 'routes-underground', type: 'line', source: 'routes', filter: UNDERGROUND,
+  layout: { 'line-cap': 'round' }, paint: { 'line-color': '#8B4513', 'line-width': 4 } });
+map.addLayer({ id: 'routes-aerial', type: 'line', source: 'routes', filter: ['!', UNDERGROUND],
+  paint: { 'line-color': '#1E88E5', 'line-width': 4, 'line-dasharray': [2, 1.5] } });</pre>
+        <div class="src">maplibre.html, lines 48 and 50&ndash;53</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recommendation for this project</h2>
+    <div class="reco">
+      <p>Use <strong>MapLibre with the OpenFreeMap basemap</strong>. It costs nothing, needs no key or card, and gave the sharpest result in our test. It also has the most room to grow: it can show tens of thousands of routes, and later it can read map tiles straight from our PostGIS database (with Martin or pg_tileserv) instead of one large file. The main risk is that OpenFreeMap is a free service with no uptime guarantee. Before real users depend on it, we should host the basemap ourselves or move to a paid tile provider; neither change needs a rewrite. Leaflet is a fine fallback for a quick internal prototype, but its look and its public tile server limits make it a weaker long-term choice. Google Maps was not tested, because it needs a billing account with a card. It is only worth revisiting if a familiar Google look matters more than cost and vendor lock-in.</p>
+    </div>
+  </section>
+</main>
+<script>
+  // Show the live Google map only when google.html has a real API key.
+  fetch('google.html').then(r => r.text()).then(src => {
+    const m = src.match(/GOOGLE_MAPS_API_KEY\s*=\s*'([^']*)'/);
+    if (!m || !m[1] || m[1] === 'YOUR_API_KEY') return;
+    const f = document.createElement('iframe');
+    f.src = 'google.html'; f.title = 'Google Maps'; f.loading = 'lazy';
+    document.getElementById('google-live').replaceWith(f);
+  }).catch(() => {});
+</script>
+</body>
+</html>

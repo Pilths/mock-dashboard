@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "routes",
+"features": [
+{ "type": "Feature", "properties": { "name": "Kajang-Bangi", "description": "Underground, 24 cores" }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 101.7903, 2.9935 ], [ 101.785, 2.97 ], [ 101.781, 2.945 ], [ 101.7777, 2.9227 ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Kajang-Cheras", "description": "Aerial, 48 cores" }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 101.7903, 2.9935 ], [ 101.77, 3.03 ], [ 101.755, 3.06 ], [ 101.743, 3.083 ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Cheras-KL Central", "description": "Underground, 96 cores" }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 101.743, 3.083 ], [ 101.72, 3.105 ], [ 101.7, 3.125 ], [ 101.6869, 3.139 ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Bangi-Putrajaya", "description": "Aerial, 24 cores" }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 101.7777, 2.9227 ], [ 101.75, 2.924 ], [ 101.72, 2.9255 ], [ 101.6964, 2.9264 ] ] ] } }
+]
+}

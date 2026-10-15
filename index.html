@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fibre map comparison</title>
+<style>
+  body { font: 16px/1.5 sans-serif; max-width: 640px; margin: 2em auto; padding: 0 16px; }
+  li { margin-bottom: .6em; }
+</style>
+</head>
+<body>
+<h1>Mock fibre routes: 3 web map options</h1>
+<p>All pages load the same <a href="sites.geojson">sites.geojson</a> and <a href="routes.geojson">routes.geojson</a>, exported from PostGIS.</p>
+<ul>
+  <li><a href="google.html">Google Maps JavaScript API</a>: needs an API key (set at the top of google.html).</li>
+  <li><a href="osm.html">Leaflet + OpenStreetMap raster tiles</a>: no key.</li>
+  <li><a href="maplibre.html">MapLibre GL JS + OpenFreeMap vector</a>: no key, with a toggle to OSM raster.</li>
+</ul>
+</body>
+</html>

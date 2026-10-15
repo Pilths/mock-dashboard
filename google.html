@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fibre map: Google Maps</title>
+<script>
+  // Put your Google Maps JavaScript API key here.
+  const GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY';
+</script>
+<style>
+  html, body, #map { height: 100%; margin: 0; }
+  .legend { background: #fff; padding: 6px 10px; margin: 10px; font: 13px sans-serif; border-radius: 4px; box-shadow: 0 1px 4px #0004; }
+  .legend i { display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 4px solid; }
+  .nokey { font: 16px sans-serif; padding: 2em; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+const isUnderground = d => /underground/i.test(d || '');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function initMap() {
+  const map = new google.maps.Map(document.getElementById('map'), { center: { lat: 3, lng: 101.7 }, zoom: 11 });
+  const info = new google.maps.InfoWindow();
+  const bounds = new google.maps.LatLngBounds();
+
+  map.data.setStyle(f => {
+    const desc = f.getProperty('description');
+    if (f.getGeometry().getType().endsWith('Point')) return {
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#D32F2F', fillOpacity: 1,
+              strokeColor: '#fff', strokeWeight: 2, labelOrigin: new google.maps.Point(0, -2.6) },
+      label: { text: f.getProperty('name'), fontSize: '13px', fontWeight: 'bold' }
+    };
+    // ponytail: Data layer has no dashed lines; Aerial differs by colour only. Use Polyline icons if dashes matter.
+    return { strokeColor: isUnderground(desc) ? '#8B4513' : '#1E88E5', strokeWeight: 4 };
+  });
+  map.data.addListener('addfeature', e => e.feature.getGeometry().forEachLatLng(ll => bounds.extend(ll)));
+  map.data.addListener('click', e => {
+    info.setContent(`<b>${esc(e.feature.getProperty('name'))}</b><br>${esc(e.feature.getProperty('description'))}`);
+    info.setPosition(e.latLng);
+    info.open(map);
+  });
+
+  let pending = 2;
+  const done = () => --pending || map.fitBounds(bounds, 30);
+  map.data.loadGeoJson('routes.geojson', null, done);
+  map.data.loadGeoJson('sites.geojson', null, done);
+
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.innerHTML = '<i style="border-color:#8B4513"></i>Underground<br><i style="border-color:#1E88E5"></i>Aerial';
+  map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+}
+
+if (GOOGLE_MAPS_API_KEY === 'YOUR_API_KEY') {
+  document.getElementById('map').innerHTML =
+    '<p class="nokey">Set <code>GOOGLE_MAPS_API_KEY</code> at the top of google.html to load this map.</p>';
+} else {
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&v=quarterly&callback=initMap`;
+  s.async = true;
+  document.head.appendChild(s);
+}
+</script>
+</body>
+</html>

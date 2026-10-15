@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "sites",
+"features": [
+{ "type": "Feature", "properties": { "name": "Kajang Hub", "description": "Core site" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 101.7903, 2.9935 ] ] } },
+{ "type": "Feature", "properties": { "name": "Bangi POP", "description": "Aggregation" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 101.7777, 2.9227 ] ] } },
+{ "type": "Feature", "properties": { "name": "Cheras POP", "description": "Aggregation" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 101.743, 3.083 ] ] } },
+{ "type": "Feature", "properties": { "name": "KL Central", "description": "Core site" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 101.6869, 3.139 ] ] } },
+{ "type": "Feature", "properties": { "name": "Putrajaya POP", "description": "Aggregation" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 101.6964, 2.9264 ] ] } }
+]
+}

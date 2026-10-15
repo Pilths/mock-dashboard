@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fibre map: Leaflet + OSM</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body, #map { height: 100%; margin: 0; }
+  .legend { background: #fff; padding: 6px 10px; font: 13px sans-serif; border-radius: 4px; box-shadow: 0 1px 4px #0004; }
+  .legend i { display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 4px solid; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+const isUnderground = d => /underground/i.test(d || '');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const popup = p => `<b>${esc(p.name)}</b><br>${esc(p.description)}`;
+
+const map = L.map('map');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = () => Object.assign(L.DomUtil.create('div', 'legend'), {
+  innerHTML: '<i style="border-color:#8B4513"></i>Underground<br><i style="border-color:#1E88E5;border-top-style:dashed"></i>Aerial'
+});
+legend.addTo(map);
+
+Promise.all(['routes.geojson', 'sites.geojson'].map(f => fetch(f).then(r => r.json()))).then(([routes, sites]) => {
+  const r = L.geoJSON(routes, {
+    style: f => isUnderground(f.properties.description)
+      ? { color: '#8B4513', weight: 4 }
+      : { color: '#1E88E5', weight: 4, dashArray: '8 6' },
+    onEachFeature: (f, l) => l.bindPopup(popup(f.properties))
+  }).addTo(map);
+  const s = L.geoJSON(sites, {
+    pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 7, color: '#fff', weight: 2, fillColor: '#D32F2F', fillOpacity: 1 }),
+    onEachFeature: (f, l) => l.bindPopup(popup(f.properties))
+      .bindTooltip(esc(f.properties.name), { permanent: true, direction: 'right', offset: [8, 0] })
+  }).addTo(map);
+  map.fitBounds(r.getBounds().extend(s.getBounds()), { padding: [30, 30] });
+});
+</script>
+</body>
+</html>
