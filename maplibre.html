@@ -66,11 +66,16 @@ dataReady.then(({ routes, sites }) => {
   map.fitBounds(b, { padding: 40, duration: 0 });
 });
 
-for (const id of ['routes-underground', 'routes-aerial', 'sites']) {
-  map.on('click', id, e => {
-    const p = e.features[0].properties;
-    new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<b>${esc(p.name)}</b><br>${esc(p.description)}`).addTo(map);
-  });
+const CLICKABLE = ['sites', 'routes-underground', 'routes-aerial'];
+// One handler for all layers: where a site and routes overlap, show only the topmost feature (the site).
+map.on('click', e => {
+  if (!map.getLayer('sites')) return; // layers briefly absent while the basemap switches
+  const f = map.queryRenderedFeatures(e.point, { layers: CLICKABLE })[0];
+  if (!f) return;
+  new maplibregl.Popup().setLngLat(e.lngLat)
+    .setHTML(`<b>${esc(f.properties.name)}</b><br>${esc(f.properties.description)}`).addTo(map);
+});
+for (const id of CLICKABLE) {
   map.on('mouseenter', id, () => map.getCanvas().style.cursor = 'pointer');
   map.on('mouseleave', id, () => map.getCanvas().style.cursor = '');
 }
