@@ -40,6 +40,24 @@ def snap(server, profile, coords):
     return route["geometry"]["coordinates"], route["distance"]
 
 
+def via_points(line, step=20):
+    """Thin a long line to at most ~step waypoints, always keeping both ends."""
+    if len(line) <= step:
+        return line
+    k = (len(line) - 1) / (step - 1)
+    return [line[round(i * k)] for i in range(step)]
+
+
+def snap_chunked(server, profile, pts, size=25):
+    """OSRM rejects very long waypoint lists, so route in overlapping chunks."""
+    coords, dist = [], 0.0
+    for i in range(0, len(pts) - 1, size - 1):
+        c, d = snap(server, profile, pts[i:i + size])
+        coords += c if not coords else c[1:]
+        dist += d
+    return coords, dist
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--server", default="https://router.project-osrm.org")
@@ -51,22 +69,28 @@ def main():
         shutil.copy(OUT, SRC)
     fc = json.loads(SRC.read_text())
 
+    failed = 0
     for f in fc["features"]:
-        line = f["geometry"]["coordinates"][0]
-        pts = line if a.via else [line[0], line[-1]]
+        name = f["properties"].get("name")
+        parts, total = [], 0.0
         try:
-            snapped, dist = snap(a.server.rstrip("/"), a.profile, pts)
+            for line in f["geometry"]["coordinates"]:
+                pts = via_points(line) if a.via else [line[0], line[-1]]
+                snapped, dist = snap_chunked(a.server.rstrip("/"), a.profile, pts)
+                # keep the exact end coordinates so the line touches the site markers
+                parts.append([line[0]] + snapped + [line[-1]])
+                total += dist
         except Exception as e:
-            sys.exit(f"{f['properties']['name']}: routing failed ({e}); routes.geojson left unchanged")
-        # keep the exact site coordinates at both ends so the line touches the markers
-        snapped = [line[0]] + snapped + [line[-1]]
-        f["geometry"]["coordinates"] = [snapped]
-        f["properties"]["length_km"] = round(dist / 1000, 2)
-        print(f"{f['properties']['name']}: {len(snapped)} points, {dist/1000:.1f} km")
+            failed += 1
+            print(f"{name}: routing failed ({e}); kept straight line")
+            continue
+        f["geometry"]["coordinates"] = parts
+        f["properties"]["length_km"] = round(total / 1000, 2)
+        print(f"{name}: {sum(map(len, parts))} points, {total/1000:.1f} km")
         time.sleep(1)  # be polite to the public server
 
     OUT.write_text(json.dumps(fc, indent=1) + "\n")
-    print("wrote", OUT.name)
+    print("wrote", OUT.name + (f" ({failed} route(s) left straight)" if failed else ""))
 
 
 if __name__ == "__main__":
