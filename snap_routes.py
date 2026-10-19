@@ -12,7 +12,7 @@ road geometry. Standard library only.
 The public demo server is for light use only. For anything heavier, run your own
 OSRM (docker run osrm/osrm-routed) with a Malaysia extract from Geofabrik.
 """
-import argparse, json, shutil, sys, time, urllib.request
+import argparse, json, shutil, ssl, sys, time, urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -20,10 +20,19 @@ SRC = HERE / "routes.straight.geojson"
 OUT = HERE / "routes.geojson"
 
 
+def ssl_context():
+    # Python 3.13+ enables strict X.509 checks that many corporate HTTPS-inspection
+    # proxies fail ("Basic Constraints of CA cert not marked critical"). Turn off only
+    # that strictness; certificate and hostname verification stay on.
+    ctx = ssl.create_default_context()
+    ctx.verify_flags &= ~getattr(ssl, "VERIFY_X509_STRICT", 0)
+    return ctx
+
+
 def snap(server, profile, coords):
     path = ";".join(f"{x},{y}" for x, y in coords)
     url = f"{server}/route/v1/{profile}/{path}?overview=full&geometries=geojson&continue_straight=false"
-    with urllib.request.urlopen(url, timeout=30) as r:
+    with urllib.request.urlopen(url, timeout=30, context=ssl_context()) as r:
         data = json.load(r)
     if data.get("code") != "Ok":
         raise RuntimeError(data.get("message") or data.get("code"))
